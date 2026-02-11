@@ -1,0 +1,40 @@
+Metadata-Version: 2.4
+Name: sickle-plus-plus
+Version: 1.0.0
+Summary: Live inference pipeline for satellite-based crop monitoring
+Author-email: SICKLE++ Team <contact@sickle.ai>
+Project-URL: Homepage, https://github.com/your-org/sickle-plus-plus
+Project-URL: Documentation, https://sickle-plus-plus.readthedocs.io
+Project-URL: Repository, https://github.com/your-org/sickle-plus-plus
+Project-URL: Issues, https://github.com/your-org/sickle-plus-plus/issues
+Keywords: satellite,agriculture,remote-sensing,crop-monitoring
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Topic :: Scientific/Engineering :: GIS
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: earthengine-api>=0.1.300
+Requires-Dist: geopandas>=0.12.0
+Requires-Dist: torch>=1.9.0
+Requires-Dist: numpy>=1.21.0
+Requires-Dist: pandas>=1.3.0
+Requires-Dist: shapely>=1.8.0
+Requires-Dist: rasterio>=1.3.0
+Requires-Dist: matplotlib>=3.5.0
+Requires-Dist: scikit-learn>=1.0.0
+Requires-Dist: tqdm>=4.62.0
+Provides-Extra: dev
+Requires-Dist: pytest>=6.0; extra == "dev"
+Requires-Dist: pytest-cov>=2.0; extra == "dev"
+Requires-Dist: black>=22.0; extra == "dev"
+Requires-Dist: flake8>=4.0; extra == "dev"
+Requires-Dist: mypy>=0.900; extra == "dev"
+Provides-Extra: notebook
+Requires-Dist: jupyter>=1.0; extra == "notebook"
+Requires-Dist: ipykernel>=6.0; extra == "notebook"
+Requires-Dist: plotly>=5.0; extra == "notebook"

@@ -1,0 +1,23 @@
+{
+  "download": {
+    "cloud_threshold": 15.0,
+    "scale": 10,
+    "include_s1": true,
+    "include_s2": true,
+    "include_l8": false
+  },
+  "features": {
+    "include_vegetation": true,
+    "include_sar": true,
+    "include_texture": false,
+    "include_spectral": false,
+    "normalization": "minmax"
+  },
+  "inference": {
+    "task_type": "yield_prediction",
+    "confidence_threshold": 0.5
+  },
+  "validation": {
+    "max_area_km2": 10000
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Test Agricultural Field",
+        "crop_type": "corn",
+        "location": "Iowa, USA"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-93.5, 41.5],
+          [-93.4, 41.5],
+          [-93.4, 41.6],
+          [-93.5, 41.6],
+          [-93.5, 41.5]
+        ]]
+      }
+    }
+  ]
+}
