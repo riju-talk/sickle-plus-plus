@@ -19,7 +19,6 @@ import os
 import argparse
 import json
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
 
 # Add parent directory to path to import pipeline modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -46,7 +45,7 @@ class GEEDryRunAnalyzer:
         
         self.downloader = EarthEngineDownloader(initialize_ee=False)
     
-    def analyze_geometry(self, geojson_path: str) -> Dict:
+    def analyze_geometry(self, geojson_path: str) -> dict:
         """
         Analyze the geometry file and return information.
         
@@ -79,7 +78,7 @@ class GEEDryRunAnalyzer:
             'is_valid': is_valid
         }
     
-    def analyze_sentinel2_availability(self, geometry: ee.Geometry, start_date: str, end_date: str) -> Dict:
+    def analyze_sentinel2_availability(self, geometry: ee.Geometry, start_date: str, end_date: str) -> dict:
         """Analyze Sentinel-2 data availability."""
         print(f"\n🛰️  Analyzing Sentinel-2 data...")
         
@@ -107,29 +106,43 @@ class GEEDryRunAnalyzer:
             print(f"   Images with <20% clouds: {cloud_filtered_count}")
             print(f"   Available bands: {len(band_names)}")
             
-            # Standard S2 bands with descriptions
+            # SICKLE-compatible S2 bands (agricultural focus)
             s2_bands = {
-                'B1': 'Coastal aerosol (443nm)',
-                'B2': 'Blue (490nm)',
-                'B3': 'Green (560nm)',
-                'B4': 'Red (665nm)',
-                'B5': 'Vegetation red edge (705nm)',
-                'B6': 'Vegetation red edge (740nm)',
-                'B7': 'Vegetation red edge (783nm)',
-                'B8': 'NIR (842nm)',
-                'B8A': 'Vegetation red edge (865nm)',
-                'B9': 'Water vapour (945nm)',
-                'B11': 'SWIR 1 (1610nm)',
-                'B12': 'SWIR 2 (2190nm)',
-                'QA60': 'Cloud mask'
+                'B1': 'Coastal aerosol (443nm) - Atmospheric correction',
+                'B2': 'Blue (490nm) - Water feature detection',
+                'B3': 'Green (560nm) - Vegetation health',
+                'B4': 'Red (665nm) - Chlorophyll absorption', 
+                'B5': 'Red edge 1 (705nm) - Leaf area index',
+                'B6': 'Red edge 2 (740nm) - Chlorophyll content',
+                'B7': 'Red edge 3 (783nm) - Vegetation stress',
+                'B8': 'NIR (842nm) - Vegetation biomass',
+                'B8A': 'Narrow NIR (865nm) - Precise vegetation analysis',
+                'B9': 'Water vapour (945nm) - Atmospheric correction',
+                'B11': 'SWIR 1 (1610nm) - Crop moisture',
+                'B12': 'SWIR 2 (2190nm) - Crop senescence',
+                'QA60': 'Cloud mask - Quality control'
             }
             
-            print("   📊 Sentinel-2 Bands:")
+            # SICKLE dataset uses these 12 specific bands
+            sickle_bands = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B11', 'B12']
+            
+            print("   📊 Sentinel-2 Bands (SICKLE Agricultural Focus):")
             for band, description in s2_bands.items():
                 if band in band_names:
-                    print(f"      ✅ {band}: {description}")
+                    is_sickle = '🌾' if band in sickle_bands else '  '
+                    print(f"      ✅ {is_sickle} {band}: {description}")
                 else:
-                    print(f"      ❌ {band}: {description} (not available)")
+                    print(f"      ❌    {band}: {description} (not available)")
+            
+            # Agricultural suitability check
+            sickle_available = sum(1 for band in sickle_bands if band in band_names)
+            print(f"   🌾 SICKLE Compatibility: {sickle_available}/12 required bands available")
+            if sickle_available >= 10:
+                print(f"   ✅ Excellent for agricultural analysis")
+            elif sickle_available >= 8:
+                print(f"   ⚠️  Good for agricultural analysis (some bands missing)")
+            else:
+                print(f"   ❌ Limited agricultural analysis capability")
             
             return {
                 'total_images': total_images,
@@ -138,12 +151,11 @@ class GEEDryRunAnalyzer:
                 'band_descriptions': s2_bands,
                 'scale': 10  # meters
             }
-            
         except Exception as e:
             print(f"   ❌ Error analyzing Sentinel-2: {e}")
             return {'error': str(e)}
     
-    def analyze_sentinel1_availability(self, geometry: ee.Geometry, start_date: str, end_date: str) -> Dict:
+    def analyze_sentinel1_availability(self, geometry: ee.Geometry, start_date: str, end_date: str) -> dict:
         """Analyze Sentinel-1 data availability."""
         print(f"\n📡 Analyzing Sentinel-1 SAR data...")
         
@@ -177,21 +189,35 @@ class GEEDryRunAnalyzer:
             print(f"   Descending orbit: {descending_count}")
             print(f"   Available bands: {len(band_names)}")
             
-            # Standard S1 bands with descriptions
+            # SICKLE-compatible S1 bands (agricultural SAR analysis)
             s1_bands = {
-                'VV': 'Vertical transmit, vertical receive',
-                'VH': 'Vertical transmit, horizontal receive',
-                'HH': 'Horizontal transmit, horizontal receive',
-                'HV': 'Horizontal transmit, vertical receive',
-                'angle': 'Incidence angle'
+                'VV': 'Vertical-Vertical - Crop structure/biomass',
+                'VH': 'Vertical-Horizontal - Crop volume/roughness', 
+                'HH': 'Horizontal-Horizontal - Surface conditions',
+                'HV': 'Horizontal-Vertical - Volume scattering',
+                'angle': 'Incidence angle - Geometric correction'
             }
             
-            print("   📊 Sentinel-1 Bands:")
+            # SICKLE uses VV and VH for crop monitoring
+            sickle_sar_bands = ['VV', 'VH']
+            
+            print("   📊 Sentinel-1 Bands (Agricultural SAR Analysis):")
             for band, description in s1_bands.items():
                 if band in band_names:
-                    print(f"      ✅ {band}: {description}")
+                    is_sickle = '🌾' if band in sickle_sar_bands else '  '
+                    print(f"      ✅ {is_sickle} {band}: {description}")
                 else:
-                    print(f"      ❌ {band}: {description} (not available)")
+                    print(f"      ❌    {band}: {description} (not available)")
+                    
+            # Agricultural SAR suitability
+            sar_available = sum(1 for band in sickle_sar_bands if band in band_names)
+            print(f"   🌾 SICKLE SAR Compatibility: {sar_available}/2 required bands available")
+            if sar_available == 2:
+                print(f"   ✅ Optimal for crop monitoring (VV+VH dual-pol)")
+            elif sar_available == 1:
+                print(f"   ⚠️  Limited crop analysis (single polarization)")
+            else:
+                print(f"   ❌ No suitable SAR data for crop monitoring")
             
             return {
                 'total_images': total_images,
@@ -201,12 +227,11 @@ class GEEDryRunAnalyzer:
                 'band_descriptions': s1_bands,
                 'scale': 10  # meters
             }
-            
         except Exception as e:
             print(f"   ❌ Error analyzing Sentinel-1: {e}")
             return {'error': str(e)}
     
-    def analyze_landsat8_availability(self, geometry: ee.Geometry, start_date: str, end_date: str) -> Dict:
+    def analyze_landsat8_availability(self, geometry: ee.Geometry, start_date: str, end_date: str) -> dict:
         """Analyze Landsat 8 data availability."""
         print(f"\n🌍 Analyzing Landsat 8 data...")
         
@@ -270,12 +295,11 @@ class GEEDryRunAnalyzer:
                 'band_descriptions': l8_bands,
                 'scale': 30  # meters
             }
-            
         except Exception as e:
             print(f"   ❌ Error analyzing Landsat 8: {e}")
             return {'error': str(e)}
     
-    def estimate_download_size(self, geometry_info: Dict, s2_info: Dict, s1_info: Dict, l8_info: Dict) -> Dict:
+    def estimate_download_size(self, geometry_info: dict, s2_info: dict, s1_info: dict, l8_info: dict) -> dict:
         """Estimate download size for the data."""
         print(f"\n💾 Estimating download size...")
         
@@ -336,12 +360,282 @@ class GEEDryRunAnalyzer:
         
         return estimates
     
+    def analyze_agricultural_suitability(self, geometry_info: Dict, s2_info: Dict, 
+                                        s1_info: Dict, l8_info: Dict) -> Dict:
+        """Analyze suitability for agricultural applications based on SICKLE requirements."""
+        print(f"\n🌾 Analyzing agricultural suitability...")
+        
+        suitability = {
+            'overall_score': 0,
+            'recommendations': [],
+            'sickle_compatibility': {},
+            'agricultural_readiness': {}
+        }
+        
+        # Area suitability (SICKLE works with 0.38 acre average plots = ~0.0015 km²)
+        area_km2 = geometry_info['metadata']['area_km2']
+        if area_km2 >= 0.001:  # Minimum field size
+            area_score = min(10, area_km2 * 5)  # Scale to 10
+            area_suitable = True
+            print(f"   ✅ Field size suitable: {area_km2:.3f} km²")
+        else:
+            area_score = 0
+            area_suitable = False
+            print(f"   ❌ Field too small: {area_km2:.3f} km² (min: 0.001 km²)")
+        
+        # SICKLE S2 band compatibility
+        sickle_s2_bands = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B11', 'B12']
+        s2_bands_available = s2_info.get('available_bands', [])
+        s2_compatibility = sum(1 for band in sickle_s2_bands if band in s2_bands_available)
+        s2_score = (s2_compatibility / 12) * 30  # 30 points max
+        
+        print(f"   🔍 Sentinel-2 SICKLE compatibility: {s2_compatibility}/12 bands ({s2_score:.1f}/30 pts)")
+        
+        # SICKLE S1 SAR compatibility
+        sickle_s1_bands = ['VV', 'VH']
+        s1_bands_available = s1_info.get('available_bands', [])
+        s1_compatibility = sum(1 for band in sickle_s1_bands if band in s1_bands_available) 
+        s1_score = (s1_compatibility / 2) * 20  # 20 points max
+        
+        print(f"   📡 Sentinel-1 SICKLE compatibility: {s1_compatibility}/2 bands ({s1_score:.1f}/20 pts)")
+        
+        # Data availability for time series analysis
+        total_images = (
+            s2_info.get('cloud_filtered_count', 0) +
+            s1_info.get('total_images', 0) +
+            l8_info.get('cloud_filtered_count', 0)
+        )
+        
+        if total_images >= 12:  # Monthly time series
+            temporal_score = 20
+            print(f"   📈 Excellent temporal coverage: {total_images} images (20/20 pts)")
+        elif total_images >= 6:
+            temporal_score = 15
+            print(f"   📈 Good temporal coverage: {total_images} images (15/20 pts)")
+        elif total_images >= 3:
+            temporal_score = 10
+            print(f"   📈 Limited temporal coverage: {total_images} images (10/20 pts)")
+        else:
+            temporal_score = 0
+            print(f"   📈 Insufficient temporal coverage: {total_images} images (0/20 pts)")
+        
+        # Cloud coverage impact on agricultural analysis
+        s2_cloud_ratio = (
+            s2_info.get('cloud_filtered_count', 0) / 
+            max(s2_info.get('total_images', 1), 1)
+        )
+        
+        if s2_cloud_ratio > 0.7:
+            cloud_score = 10
+            print(f"   ☀️ Excellent cloud-free data: {s2_cloud_ratio:.1%} clear (10/10 pts)")
+        elif s2_cloud_ratio > 0.4:
+            cloud_score = 7
+            print(f"   ⛅ Good cloud-free data: {s2_cloud_ratio:.1%} clear (7/10 pts)")
+        elif s2_cloud_ratio > 0.2:
+            cloud_score = 4
+            print(f"   ☁️ Limited cloud-free data: {s2_cloud_ratio:.1%} clear (4/10 pts)")
+        else:
+            cloud_score = 0
+            print(f"   ⛈️ Insufficient cloud-free data: {s2_cloud_ratio:.1%} clear (0/10 pts)")
+        
+        # Calculate overall agricultural suitability score
+        suitability['overall_score'] = s2_score + s1_score + temporal_score + cloud_score
+        max_score = 80  # 30+20+20+10
+        score_percentage = (suitability['overall_score'] / max_score) * 100
+        
+        # Generate recommendations
+        recommendations = []
+        
+        if score_percentage >= 80:
+            recommendations.append("✅ Excellent for SICKLE-style agricultural analysis")
+        elif score_percentage >= 60:
+            recommendations.append("✅ Good for agricultural analysis with minor limitations")
+        elif score_percentage >= 40:
+            recommendations.append("⚠️ Suitable for basic agricultural analysis")
+        else:
+            recommendations.append("❌ Limited suitability for agricultural analysis")
+        
+        if not area_suitable:
+            recommendations.append("📍 Consider larger field area for better results")
+        
+        if s2_compatibility < 10:
+            recommendations.append("🌈 Missing key Sentinel-2 bands for vegetation analysis")
+            
+        if s1_compatibility < 2:
+            recommendations.append("📡 Missing SAR polarizations for crop structure analysis")
+            
+        if total_images < 6:
+            recommendations.append("📅 Extend date range for better temporal analysis")
+            
+        if s2_cloud_ratio < 0.3:
+            recommendations.append("☁️ Consider different season for less cloud cover")
+        
+        # SICKLE compatibility assessment
+        suitability['sickle_compatibility'] = {
+            's2_bands': f"{s2_compatibility}/12",
+            's1_bands': f"{s1_compatibility}/2",
+            'ready_for_sickle': s2_compatibility >= 10 and s1_compatibility == 2
+        }
+        
+        # Agricultural readiness
+        suitability['agricultural_readiness'] = {
+            'field_size_ok': area_suitable,
+            'multispectral_ready': s2_compatibility >= 8,
+            'sar_ready': s1_compatibility >= 1,
+            'temporal_ready': total_images >= 6,
+            'cloud_acceptable': s2_cloud_ratio >= 0.3
+        }
+        
+        suitability['recommendations'] = recommendations
+        
+        print(f"\n🎆 Agricultural Suitability Score: {suitability['overall_score']:.1f}/{max_score} ({score_percentage:.1f}%)")
+        for rec in recommendations:
+            print(f"   {rec}")
+        
+        return suitability
+    
+    def analyze_agricultural_suitability(self, geometry_info: Dict, s2_info: Dict, 
+                                        s1_info: Dict, l8_info: Dict) -> Dict:
+        """Analyze suitability for agricultural applications based on SICKLE requirements."""
+        print(f"\n🌾 Analyzing agricultural suitability...")
+        
+        suitability = {
+            'overall_score': 0,
+            'recommendations': [],
+            'sickle_compatibility': {},
+            'agricultural_readiness': {}
+        }
+        
+        # Area suitability (SICKLE works with 0.38 acre average plots = ~0.0015 km²)
+        area_km2 = geometry_info['metadata']['area_km2']
+        if area_km2 >= 0.001:  # Minimum field size
+            area_score = min(10, area_km2 * 5)  # Scale to 10
+            area_suitable = True
+            print(f"   ✅ Field size suitable: {area_km2:.3f} km²")
+        else:
+            area_score = 0
+            area_suitable = False
+            print(f"   ❌ Field too small: {area_km2:.3f} km² (min: 0.001 km²)")
+        
+        # SICKLE S2 band compatibility
+        sickle_s2_bands = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B11', 'B12']
+        s2_bands_available = s2_info.get('available_bands', [])
+        s2_compatibility = sum(1 for band in sickle_s2_bands if band in s2_bands_available)
+        s2_score = (s2_compatibility / 12) * 30  # 30 points max
+        
+        print(f"   🔍 Sentinel-2 SICKLE compatibility: {s2_compatibility}/12 bands ({s2_score:.1f}/30 pts)")
+        
+        # SICKLE S1 SAR compatibility
+        sickle_s1_bands = ['VV', 'VH']
+        s1_bands_available = s1_info.get('available_bands', [])
+        s1_compatibility = sum(1 for band in sickle_s1_bands if band in s1_bands_available) 
+        s1_score = (s1_compatibility / 2) * 20  # 20 points max
+        
+        print(f"   📡 Sentinel-1 SICKLE compatibility: {s1_compatibility}/2 bands ({s1_score:.1f}/20 pts)")
+        
+        # Data availability for time series analysis
+        total_images = (
+            s2_info.get('cloud_filtered_count', 0) +
+            s1_info.get('total_images', 0) +
+            l8_info.get('cloud_filtered_count', 0)
+        )
+        
+        if total_images >= 12:  # Monthly time series
+            temporal_score = 20
+            print(f"   📈 Excellent temporal coverage: {total_images} images (20/20 pts)")
+        elif total_images >= 6:
+            temporal_score = 15
+            print(f"   📈 Good temporal coverage: {total_images} images (15/20 pts)")
+        elif total_images >= 3:
+            temporal_score = 10
+            print(f"   📈 Limited temporal coverage: {total_images} images (10/20 pts)")
+        else:
+            temporal_score = 0
+            print(f"   📈 Insufficient temporal coverage: {total_images} images (0/20 pts)")
+        
+        # Cloud coverage impact on agricultural analysis
+        s2_cloud_ratio = (
+            s2_info.get('cloud_filtered_count', 0) / 
+            max(s2_info.get('total_images', 1), 1)
+        )
+        
+        if s2_cloud_ratio > 0.7:
+            cloud_score = 10
+            print(f"   ☀️ Excellent cloud-free data: {s2_cloud_ratio:.1%} clear (10/10 pts)")
+        elif s2_cloud_ratio > 0.4:
+            cloud_score = 7
+            print(f"   ⛅ Good cloud-free data: {s2_cloud_ratio:.1%} clear (7/10 pts)")
+        elif s2_cloud_ratio > 0.2:
+            cloud_score = 4
+            print(f"   ☁️ Limited cloud-free data: {s2_cloud_ratio:.1%} clear (4/10 pts)")
+        else:
+            cloud_score = 0
+            print(f"   ⛈️ Insufficient cloud-free data: {s2_cloud_ratio:.1%} clear (0/10 pts)")
+        
+        # Calculate overall agricultural suitability score
+        suitability['overall_score'] = s2_score + s1_score + temporal_score + cloud_score
+        max_score = 80  # 30+20+20+10
+        score_percentage = (suitability['overall_score'] / max_score) * 100
+        
+        # Generate recommendations
+        recommendations = []
+        
+        if score_percentage >= 80:
+            recommendations.append("✅ Excellent for SICKLE-style agricultural analysis")
+        elif score_percentage >= 60:
+            recommendations.append("✅ Good for agricultural analysis with minor limitations")
+        elif score_percentage >= 40:
+            recommendations.append("⚠️ Suitable for basic agricultural analysis")
+        else:
+            recommendations.append("❌ Limited suitability for agricultural analysis")
+        
+        if not area_suitable:
+            recommendations.append("📌 Consider larger field area for better results")
+        
+        if s2_compatibility < 10:
+            recommendations.append("🌈 Missing key Sentinel-2 bands for vegetation analysis")
+            
+        if s1_compatibility < 2:
+            recommendations.append("📡 Missing SAR polarizations for crop structure analysis")
+            
+        if total_images < 6:
+            recommendations.append("📅 Extend date range for better temporal analysis")
+            
+        if s2_cloud_ratio < 0.3:
+            recommendations.append("☁️ Consider different season for less cloud cover")
+        
+        # SICKLE compatibility assessment
+        suitability['sickle_compatibility'] = {
+            's2_bands': f"{s2_compatibility}/12",
+            's1_bands': f"{s1_compatibility}/2",
+            'ready_for_sickle': s2_compatibility >= 10 and s1_compatibility == 2
+        }
+        
+        # Agricultural readiness
+        suitability['agricultural_readiness'] = {
+            'field_size_ok': area_suitable,
+            'multispectral_ready': s2_compatibility >= 8,
+            'sar_ready': s1_compatibility >= 1,
+            'temporal_ready': total_images >= 6,
+            'cloud_acceptable': s2_cloud_ratio >= 0.3
+        }
+        
+        suitability['recommendations'] = recommendations
+        
+        print(f"\n🎆 Agricultural Suitability Score: {suitability['overall_score']:.1f}/{max_score} ({score_percentage:.1f}%)")
+        for rec in recommendations:
+            print(f"   {rec}")
+        
+        return suitability
+    
     def generate_download_summary(self, geometry_info: Dict, s2_info: Dict, s1_info: Dict, 
-                                l8_info: Dict, size_estimates: Dict, start_date: str, end_date: str) -> Dict:
-        """Generate a complete summary of the dry run analysis."""
+                                l8_info: Dict, size_estimates: Dict, start_date: str, end_date: str,
+                                agricultural_suit: Dict) -> Dict:
+        """Generate a complete summary of the dry run analysis including agricultural assessment."""
         
         summary = {
             'analysis_date': datetime.now().isoformat(),
+            'analysis_type': 'agricultural_satellite_data',
             'geometry': {
                 'area_km2': geometry_info['metadata']['area_km2'],
                 'centroid': geometry_info['metadata']['centroid'],
@@ -355,7 +649,8 @@ class GEEDryRunAnalyzer:
             'sentinel1': s1_info,
             'landsat8': l8_info,
             'size_estimates': size_estimates,
-            'recommendations': []
+            'agricultural_suitability': agricultural_suit,
+            'recommendations': agricultural_suit['recommendations']
         }
         
         # Generate recommendations
@@ -447,15 +742,20 @@ def main():
             geometry_info, s2_info, s1_info, l8_info
         )
         
+        # Analyze agricultural suitability
+        agricultural_suitability = analyzer.analyze_agricultural_suitability(
+            geometry_info, s2_info, s1_info, l8_info
+        ) 
+         
         # Generate summary
         summary = analyzer.generate_download_summary(
             geometry_info, s2_info, s1_info, l8_info, size_estimates,
-            args.start_date, args.end_date
+            args.start_date, args.end_date, agricultural_suitability
         )
         
-        # Print recommendations
-        print(f"\n🎯 Recommendations:")
-        for rec in summary['recommendations']:
+        # Print final recommendations
+        print(f"\n🎆 Final Assessment:")
+        for rec in summary['agricultural_suitability']['recommendations']:
             print(f"   {rec}")
         
         # Save results if requested

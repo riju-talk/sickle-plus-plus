@@ -26,9 +26,10 @@ class EarthEngineDownloader:
                           start_date: str,
                           end_date: str,
                           cloud_threshold: float = 20.0,
-                          scale: int = 10) -> ee.Image:
+                          scale: int = 10,
+                          sickle_compatible: bool = True) -> ee.Image:
         """
-        Download Sentinel-2 surface reflectance data.
+        Download Sentinel-2 surface reflectance data with SICKLE-compatible bands.
         
         Args:
             geometry: Earth Engine geometry
@@ -36,6 +37,7 @@ class EarthEngineDownloader:
             end_date: End date (YYYY-MM-DD)
             cloud_threshold: Maximum cloud cover percentage
             scale: Pixel resolution in meters
+            sickle_compatible: Use SICKLE dataset band configuration
             
         Returns:
             Earth Engine image with selected bands
@@ -45,9 +47,15 @@ class EarthEngineDownloader:
                      .filterDate(start_date, end_date)
                      .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", cloud_threshold)))
         
-        # Select bands: Blue, Green, Red, NIR, SWIR1, SWIR2
-        bands = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
-        band_names = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2']
+        if sickle_compatible:
+            # SICKLE dataset uses these 12 specific bands for agricultural analysis
+            bands = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B11', 'B12']
+            band_names = ['coastal', 'blue', 'green', 'red', 'rededge1', 'rededge2', 
+                         'rededge3', 'nir', 'nir_narrow', 'watervapor', 'swir1', 'swir2']
+        else:
+            # Standard bands: Blue, Green, Red, NIR, SWIR1, SWIR2  
+            bands = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
+            band_names = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2']
         
         # Apply cloud masking
         def mask_clouds(image):
@@ -69,9 +77,10 @@ class EarthEngineDownloader:
                           start_date: str,
                           end_date: str,
                           orbit: str = 'BOTH',
-                          scale: int = 10) -> ee.Image:
+                          scale: int = 10,
+                          sickle_compatible: bool = True) -> ee.Image:
         """
-        Download Sentinel-1 GRD data.
+        Download Sentinel-1 GRD data with SICKLE-compatible configuration.
         
         Args:
             geometry: Earth Engine geometry
@@ -79,6 +88,7 @@ class EarthEngineDownloader:
             end_date: End date (YYYY-MM-DD)
             orbit: Orbit direction ('ASCENDING', 'DESCENDING', 'BOTH')
             scale: Pixel resolution in meters
+            sickle_compatible: Use SICKLE dataset SAR configuration
             
         Returns:
             Earth Engine image with VV and VH bands
@@ -93,15 +103,29 @@ class EarthEngineDownloader:
         if orbit != 'BOTH':
             collection = collection.filter(ee.Filter.eq('orbitProperties_pass', orbit))
         
-        # Apply speckle filtering
-        def apply_speckle_filter(image):
+        # SICKLE-style speckle filtering for agricultural applications
+        def apply_agricultural_sar_processing(image):
+            # Speckle filtering - SICKLE uses median filtering
             vv = image.select('VV').focal_median(50, 'circle', 'meters')
             vh = image.select('VH').focal_median(50, 'circle', 'meters')
-            return image.addBands(vv.rename('VV_filtered')).addBands(vh.rename('VH_filtered'))
+            
+            if sickle_compatible:
+                # Agricultural-specific processing
+                # Add VV/VH ratio for crop structure analysis
+                ratio = vv.divide(vh).rename('VV_VH_ratio')
+                # Add cross-polarization for volume scattering
+                cross_pol = vh.subtract(vv).rename('cross_pol')
+                return image.addBands([vv.rename('vv'), vh.rename('vh'), ratio, cross_pol])
+            else:
+                return image.addBands(vv.rename('VV_filtered')).addBands(vh.rename('VH_filtered'))
         
-        # Get median composite
-        composite = collection.map(apply_speckle_filter).median()
-        composite = composite.select(['VV_filtered', 'VH_filtered'], ['vv', 'vh']).clip(geometry)
+        # Get median composite with agricultural processing
+        composite = collection.map(apply_agricultural_sar_processing).median()
+        
+        if sickle_compatible:
+            composite = composite.select(['vv', 'vh', 'VV_VH_ratio', 'cross_pol']).clip(geometry)
+        else:
+            composite = composite.select(['VV_filtered', 'VH_filtered'], ['vv', 'vh']).clip(geometry)
         
         print(f"Sentinel-1 collection size: {collection.size().getInfo()}")
         return composite
@@ -164,9 +188,11 @@ class EarthEngineDownloader:
                                   include_s1: bool = True,
                                   include_s2: bool = True,
                                   include_l8: bool = False,
-                                  scale: int = 10) -> ee.Image:
+                                  scale: int = 10,
+                                  sickle_compatible: bool = True,
+                                  agricultural_focus: bool = True) -> ee.Image:
         """
-        Download and stack multiple sensors into one image.
+        Download and stack multiple sensors with SICKLE-compatible configuration.
         
         Args:
             geometry: Earth Engine geometry
@@ -176,6 +202,8 @@ class EarthEngineDownloader:
             include_s2: Include Sentinel-2 data
             include_l8: Include Landsat 8 data
             scale: Output pixel resolution
+            sickle_compatible: Use SICKLE dataset specifications
+            agricultural_focus: Apply agricultural-specific processing
             
         Returns:
             Stacked Earth Engine image
@@ -183,11 +211,16 @@ class EarthEngineDownloader:
         images = []
         
         if include_s2:
-            s2 = self.download_sentinel2(geometry, start_date, end_date, scale=scale)
+            s2 = self.download_sentinel2(geometry, start_date, end_date, 
+                                       scale=scale, sickle_compatible=sickle_compatible)
+            if agricultural_focus and sickle_compatible:
+                # Add agricultural indices for SICKLE compatibility
+                s2 = self._add_agricultural_indices(s2)
             images.append(s2)
         
         if include_s1:
-            s1 = self.download_sentinel1(geometry, start_date, end_date, scale=scale)
+            s1 = self.download_sentinel1(geometry, start_date, end_date, 
+                                       scale=scale, sickle_compatible=sickle_compatible)
             images.append(s1)
         
         if include_l8:
@@ -205,6 +238,25 @@ class EarthEngineDownloader:
             for img in images[1:]:
                 stacked = stacked.addBands(img)
             return stacked
+    
+    def _add_agricultural_indices(self, s2_image: ee.Image) -> ee.Image:
+        """
+        Add agricultural-specific indices to Sentinel-2 image for SICKLE compatibility.
+        """
+        # SICKLE-style agricultural indices
+        red = s2_image.select('red')
+        nir = s2_image.select('nir')
+        green = s2_image.select('green')
+        rededge1 = s2_image.select('rededge1')
+        swir1 = s2_image.select('swir1')
+        
+        # Key agricultural indices used in SICKLE
+        ndvi = nir.subtract(red).divide(nir.add(red)).rename('ndvi')
+        gndvi = nir.subtract(green).divide(nir.add(green)).rename('gndvi')
+        ndre = nir.subtract(rededge1).divide(nir.add(rededge1)).rename('ndre')
+        ndwi = green.subtract(swir1).divide(green.add(swir1)).rename('ndwi')
+        
+        return s2_image.addBands([ndvi, gndvi, ndre, ndwi])
     
     def export_to_drive(self,
                        image: ee.Image,

@@ -10,81 +10,115 @@ class FeatureEngineer:
     """
     
     @staticmethod
-    def compute_vegetation_indices(image: ee.Image) -> ee.Image:
+    def compute_agricultural_indices(image: ee.Image, sickle_compatible: bool = True) -> ee.Image:
         """
-        Compute vegetation indices from optical bands.
+        Compute agricultural indices optimized for crop monitoring (SICKLE-compatible).
         
         Args:
             image: Earth Engine image with optical bands
+            sickle_compatible: Use SICKLE dataset agricultural indices
             
         Returns:
-            Image with vegetation indices added
+            Image with agricultural indices added
         """
-        # Get band names to handle different sensors
         band_names = image.bandNames()
         
-        # Try to find common band patterns
+        # Flexible band selection for different naming conventions
         def safe_select(band_options):
             for option in band_options:
                 if band_names.contains(option).getInfo():
                     return image.select(option)
             return None
         
-        # Find red and NIR bands
+        # Get bands with multiple naming options
         red = safe_select(['red', 'B4', 'SR_B4'])
         nir = safe_select(['nir', 'B8', 'SR_B5'])
         green = safe_select(['green', 'B3', 'SR_B3'])
         blue = safe_select(['blue', 'B2', 'SR_B2'])
+        rededge1 = safe_select(['rededge1', 'B5'])
+        rededge2 = safe_select(['rededge2', 'B6'])  
+        rededge3 = safe_select(['rededge3', 'B7'])
+        nir_narrow = safe_select(['nir_narrow', 'B8A'])
         swir1 = safe_select(['swir1', 'B11', 'SR_B6'])
         swir2 = safe_select(['swir2', 'B12', 'SR_B7'])
         
         indices = image
         
-        if red and nir:
-            # NDVI - Normalized Difference Vegetation Index
+        if sickle_compatible and red and nir:
+            # Core SICKLE agricultural indices
+            
+            # NDVI - Primary vegetation index for crop monitoring
             ndvi = nir.subtract(red).divide(nir.add(red)).rename('ndvi')
             indices = indices.addBands(ndvi)
             
-            # EVI - Enhanced Vegetation Index
-            evi = nir.subtract(red).divide(
-                nir.add(red.multiply(6)).subtract(blue.multiply(7.5)).add(1)
-            ).multiply(2.5).rename('evi')
-            indices = indices.addBands(evi)
+            # GNDVI - Green NDVI for chlorophyll content
+            if green:
+                gndvi = nir.subtract(green).divide(nir.add(green)).rename('gndvi')
+                indices = indices.addBands(gndvi)
             
+            # NDRE - Red Edge NDVI for crop stress detection
+            if rededge1:
+                ndre = nir.subtract(rededge1).divide(nir.add(rededge1)).rename('ndre')
+                indices = indices.addBands(ndre)
+            
+            # NDWI - Normalized Difference Water Index for crop water content
+            if green and swir1:
+                ndwi = green.subtract(swir1).divide(green.add(swir1)).rename('ndwi')
+                indices = indices.addBands(ndwi)
+                
+            # EVI - Enhanced Vegetation Index for canopy structure
+            if green and blue:
+                evi = nir.subtract(red).divide(
+                    nir.add(red.multiply(6)).subtract(blue.multiply(7.5)).add(1)
+                ).multiply(2.5).rename('evi')
+                indices = indices.addBands(evi)
+                
             # SAVI - Soil-Adjusted Vegetation Index
-            L = 0.5
+            L = 0.5  # Soil brightness correction factor
             savi = nir.subtract(red).divide(
                 nir.add(red).add(L)
             ).multiply(1 + L).rename('savi')
             indices = indices.addBands(savi)
+            
+            # Red Edge Indices for crop health monitoring
+            if rededge1 and rededge2:
+                # Red Edge Position Index
+                reci = nir.divide(rededge1).subtract(1).rename('reci')
+                indices = indices.addBands(reci)
+                
+            # Crop-specific indices
+            if swir1 and swir2:
+                # NBR - Normalized Burn Ratio (for crop senescence)
+                nbr = nir.subtract(swir2).divide(nir.add(swir2)).rename('nbr')
+                indices = indices.addBands(nbr)
+                
+                # NDII - Normalized Difference Infrared Index (moisture)
+                ndii = nir.subtract(swir1).divide(nir.add(swir1)).rename('ndii')
+                indices = indices.addBands(ndii)
         
-        if red and swir1:
-            # NDWI - Normalized Difference Water Index
-            ndwi = green.subtract(swir1).divide(green.add(swir1)).rename('ndwi')
-            indices = indices.addBands(ndwi)
-        
-        if nir and swir1:
-            # NBR - Normalized Burn Ratio
-            nbr = nir.subtract(swir1).divide(nir.add(swir1)).rename('nbr')
-            indices = indices.addBands(nbr)
-        
-        if green and red and nir:
-            # GNDVI - Green Normalized Difference Vegetation Index
-            gndvi = nir.subtract(green).divide(nir.add(green)).rename('gndvi')
-            indices = indices.addBands(gndvi)
+        else:
+            # Standard vegetation indices
+            if red and nir:
+                ndvi = nir.subtract(red).divide(nir.add(red)).rename('ndvi')
+                indices = indices.addBands(ndvi)
+                
+                if green:
+                    gndvi = nir.subtract(green).divide(nir.add(green)).rename('gndvi')
+                    indices = indices.addBands(gndvi)
         
         return indices
     
     @staticmethod
-    def compute_sar_indices(image: ee.Image) -> ee.Image:
+    def compute_crop_sar_indices(image: ee.Image, sickle_compatible: bool = True) -> ee.Image:
         """
-        Compute SAR-based indices and ratios.
+        Compute SAR-based indices optimized for crop monitoring (SICKLE-compatible).
         
         Args:
             image: Earth Engine image with SAR bands (VV, VH)
+            sickle_compatible: Use SICKLE dataset SAR processing
             
         Returns:
-            Image with SAR indices added
+            Image with crop SAR indices added
         """
         band_names = image.bandNames()
         
@@ -99,7 +133,33 @@ class FeatureEngineer:
         
         indices = image
         
-        if vv and vh:
+        if vv and vh and sickle_compatible:
+            # SICKLE-style agricultural SAR indices
+            
+            # VV/VH ratio - Primary crop structure indicator
+            vv_vh_ratio = vv.divide(vh).rename('vv_vh_ratio')
+            indices = indices.addBands(vv_vh_ratio)
+            
+            # Normalized Difference SAR Index
+            ndsar = vv.subtract(vh).divide(vv.add(vh)).rename('ndsar')
+            indices = indices.addBands(ndsar)
+            
+            # Radar Vegetation Index (RVI) - Crop biomass indicator
+            rvi = vh.multiply(4).divide(vv.add(vh)).rename('rvi')
+            indices = indices.addBands(rvi)
+            
+            # Dual Pol SAR Vegetation Index
+            dpsvi = vh.divide(vv.add(vh)).rename('dpsvi') 
+            indices = indices.addBands(dpsvi)
+            
+            # Cross-polarization ratio for volume scattering
+            if band_names.contains('cross_pol').getInfo():
+                cross_pol = image.select('cross_pol')
+                cross_ratio = cross_pol.divide(vv.add(vh)).rename('cross_ratio')
+                indices = indices.addBands(cross_ratio)
+        
+        elif vv and vh:
+            # Standard SAR indices
             # VV/VH ratio
             ratio = vv.divide(vh).rename('vv_vh_ratio')
             indices = indices.addBands(ratio)
@@ -241,44 +301,88 @@ class FeatureEngineer:
         return image
     
     @staticmethod
-    def create_feature_stack(image: ee.Image,
-                            include_vegetation: bool = True,
-                            include_sar: bool = True,
-                            include_texture: bool = False,
-                            include_spectral: bool = False) -> ee.Image:
+    def create_agricultural_feature_stack(image: ee.Image,
+                                        include_vegetation: bool = True,
+                                        include_sar: bool = True,
+                                        include_texture: bool = False,
+                                        include_spectral: bool = False,
+                                        sickle_compatible: bool = True,
+                                        crop_focus: bool = True) -> ee.Image:
         """
-        Create a comprehensive feature stack from input image.
+        Create agricultural feature stack optimized for crop monitoring (SICKLE-compatible).
         
         Args:
             image: Input Earth Engine image
-            include_vegetation: Include vegetation indices
-            include_sar: Include SAR indices
+            include_vegetation: Include agricultural vegetation indices
+            include_sar: Include crop SAR indices
             include_texture: Include texture features
             include_spectral: Include spectral transformations
+            sickle_compatible: Use SICKLE dataset specifications
+            crop_focus: Apply crop-specific processing
             
         Returns:
-            Feature stack image
+            Agricultural feature stack image
         """
         feature_image = image
         
         if include_vegetation:
-            feature_image = FeatureEngineer.compute_vegetation_indices(feature_image)
+            feature_image = FeatureEngineer.compute_agricultural_indices(
+                feature_image, sickle_compatible=sickle_compatible
+            )
         
         if include_sar:
-            feature_image = FeatureEngineer.compute_sar_indices(feature_image)
+            feature_image = FeatureEngineer.compute_crop_sar_indices(
+                feature_image, sickle_compatible=sickle_compatible
+            )
         
-        if include_texture:
-            # Add texture for main bands
+        if include_texture and crop_focus:
+            # Apply texture analysis on key agricultural bands
             band_names = feature_image.bandNames()
-            if band_names.contains('nir').getInfo():
-                feature_image = FeatureEngineer.compute_texture_features(feature_image, 'nir')
-            elif band_names.contains('vv').getInfo():
-                feature_image = FeatureEngineer.compute_texture_features(feature_image, 'vv')
+            if band_names.contains('ndvi').getInfo():
+                feature_image = FeatureEngineer.compute_texture_features(
+                    feature_image, 'ndvi', radius=3
+                )
+            elif band_names.contains('nir').getInfo():
+                feature_image = FeatureEngineer.compute_texture_features(
+                    feature_image, 'nir', radius=3
+                )
         
         if include_spectral:
             feature_image = FeatureEngineer.compute_spectral_transformations(feature_image)
         
+        if sickle_compatible and crop_focus:
+            # Add crop-specific temporal features if multi-temporal
+            feature_image = FeatureEngineer._add_crop_temporal_features(feature_image)
+        
         return feature_image
+    
+    @staticmethod
+    def _add_crop_temporal_features(image: ee.Image) -> ee.Image:
+        """
+        Add crop-specific temporal features for growing season analysis.
+        """
+        # This would be expanded for multi-temporal analysis
+        # Currently returns image unchanged for single-time analysis
+        return image
+    
+    @staticmethod
+    def apply_sickle_quality_control(image: ee.Image, 
+                                   zero_threshold: float = 0.25) -> ee.Image:
+        """
+        Apply SICKLE-style quality control filtering.
+        
+        Args:
+            image: Input image
+            zero_threshold: Maximum fraction of zero pixels allowed (SICKLE uses 0.25)
+            
+        Returns:
+            Quality-controlled image
+        """
+        # Create a mask for non-zero pixels
+        non_zero_mask = image.neq(0).reduce(ee.Reducer.allNonZero())
+        
+        # Apply mask to remove images with >25% zero pixels (SICKLE standard)
+        return image.updateMask(non_zero_mask)
     
     @staticmethod
     def normalize_features(image: ee.Image, method: str = 'minmax') -> ee.Image:

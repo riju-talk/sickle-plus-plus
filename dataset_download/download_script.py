@@ -23,12 +23,14 @@ from pathlib import Path
 # Add pipeline to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'pipeline'))
 
-from pipeline.orchestrator.live_pipeline import LiveInferencePipeline, quick_inference, quick_dataset_build
+from pipeline.orchestrator.live_pipeline import (LiveInferencePipeline, quick_inference, 
+                                                  quick_dataset_build, quick_agricultural_inference, 
+                                                  quick_agricultural_dataset_build)
 from pipeline.models.inference import create_dummy_model
 
 def main():
     parser = argparse.ArgumentParser(description='SICKLE++ Live Inference Pipeline')
-    parser.add_argument('--mode', choices=['live', 'dataset', 'batch', 'demo'], 
+    parser.add_argument('--mode', choices=['live', 'dataset', 'batch', 'demo', 'agricultural', 'crop-dataset'], 
                        required=True, help='Pipeline mode')
     parser.add_argument('--geometry', type=str, help='Path to KML/GeoJSON file')
     parser.add_argument('--geometries', type=str, help='Pattern for multiple geometry files')
@@ -37,6 +39,9 @@ def main():
     parser.add_argument('--start-date', type=str, help='Start date (YYYY-MM-DD)')
     parser.add_argument('--end-date', type=str, help='End date (YYYY-MM-DD)')
     parser.add_argument('--config', type=str, help='Path to config file')
+    parser.add_argument('--crop-type', type=str, default='general', help='Crop type for agricultural analysis')
+    parser.add_argument('--growing-season', action='store_true', help='Use growing season dates')
+    parser.add_argument('--sickle-compatible', action='store_true', help='Use SICKLE-compatible processing')
     
     args = parser.parse_args()
     
@@ -44,7 +49,32 @@ def main():
         run_demo()
         return
     
-    if args.mode == 'live':
+    if args.mode == 'agricultural':
+        if not args.geometry or not args.model:
+            print("Error: --geometry and --model required for agricultural mode")
+            return
+        
+        print(f"Running agricultural inference for {args.geometry} (crop: {args.crop_type})")
+        results = quick_agricultural_inference(
+            geometry_file=args.geometry,
+            model_path=args.model,
+            crop_type=args.crop_type,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            growing_season=args.growing_season
+        )
+        print("Agricultural Results:")
+        if results['agricultural_results']:
+            for task, task_results in results['agricultural_results'].items():
+                print(f"  {task.upper()}:")
+                for key, value in task_results.items():
+                    if not isinstance(value, np.ndarray):
+                        print(f"    {key}: {value}")
+        print(f"  Field Area: {results['field_info']['area_km2']:.2f} km²")
+        print(f"  Agricultural Features: {results['feature_info']['agricultural_features']}")
+        print(f"  SAR Features: {results['feature_info']['sar_features']}")
+        
+    elif args.mode == 'live':
         if not args.geometry or not args.model:
             print("Error: --geometry and --model required for live mode")
             return
@@ -54,26 +84,47 @@ def main():
             geometry_file=args.geometry,
             model_path=args.model,
             start_date=args.start_date,
-            end_date=args.end_date
+            end_date=args.end_date,
+            agricultural=args.sickle_compatible
         )
         print("Inference Results:")
-        if results['inference_results']:
-            print(f"  Mean Yield: {results['inference_results'].get('mean_yield', 'N/A')}")
-            print(f"  Confidence: {results['inference_results'].get('confidence', 'N/A')}")
+        if 'agricultural_results' in results:
+            print(f"  Agricultural Analysis: ✅")
+            print(f"  Crop Type: {results.get('crop_type', 'general')}")
+        else:
+            if results['inference_results']:
+                print(f"  Mean Yield: {results['inference_results'].get('mean_yield', 'N/A')}")
+                print(f"  Confidence: {results['inference_results'].get('confidence', 'N/A')}")
         print(f"  Feature Shape: {results['feature_info']['shape']}")
         print(f"  Features: {len(results['feature_info']['feature_names'])}")
+        
+    elif args.mode == 'crop-dataset':
+        if not args.geometry:
+            print("Error: --geometry required for crop dataset mode")
+            return
+            
+        print(f"Building agricultural dataset for {args.geometry} (crop: {args.crop_type})")
+        result = quick_agricultural_dataset_build(
+            geometry_file=args.geometry,
+            crop_type=args.crop_type,
+            num_seasons=3,
+            output_dir=args.output
+        )
+        print(f"Agricultural dataset created: {result['num_samples']} samples")
+        print(f"Failed samples: {result['failed_samples']}")
+        print(f"Saved to: {result['dataset_path']}")
         
     elif args.mode == 'dataset':
         if not args.geometry:
             print("Error: --geometry required for dataset mode")
             return
             
-        # Create sample date ranges (monthly for past year)
+        # Create sample date ranges (seasonal for agricultural data)
         from datetime import datetime, timedelta
         end = datetime.now()
         date_ranges = []
-        for i in range(12):
-            start = end - timedelta(days=30)
+        for i in range(4):  # 4 seasons
+            start = end - timedelta(days=90)  # 3-month seasons
             date_ranges.append((start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')))
             end = start
         
@@ -81,7 +132,8 @@ def main():
         result = quick_dataset_build(
             geometry_file=args.geometry,
             date_ranges=date_ranges,
-            output_dir=args.output
+            output_dir=args.output,
+            agricultural=args.sickle_compatible
         )
         print(f"Dataset created: {result['num_samples']} samples, {result['failed_samples']} failed")
         print(f"Saved to: {result['dataset_path']}")
