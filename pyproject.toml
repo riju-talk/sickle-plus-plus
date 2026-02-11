@@ -1,0 +1,10 @@
+[project]
+name = "sickle-plus-plus"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "earthengine-api>=1.7.13",
+    "sentinelhub>=3.11.4",
+]
