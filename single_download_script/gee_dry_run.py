@@ -19,6 +19,7 @@ import os
 import argparse
 import json
 from datetime import datetime, timedelta
+from typing import Dict
 
 # Add parent directory to path to import pipeline modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -36,7 +37,8 @@ class GEEDryRunAnalyzer:
     def __init__(self):
         """Initialize the analyzer with Earth Engine."""
         try:
-            ee.Initialize()
+            ee.Authenticate()
+            ee.Initialize(project='sickle-plus-plus')
             print("✅ Earth Engine initialized successfully")
         except Exception as e:
             print(f"❌ Error initializing Earth Engine: {e}")
@@ -691,50 +693,35 @@ class GEEDryRunAnalyzer:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Google Earth Engine dry run analysis for satellite data',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__
-    )
-    
-    parser.add_argument('geojson', type=str, help='Path to GeoJSON file')
-    parser.add_argument('--start-date', type=str, 
-                       help='Start date (YYYY-MM-DD), default: 30 days ago')
-    parser.add_argument('--end-date', type=str,
-                       help='End date (YYYY-MM-DD), default: today')
-    parser.add_argument('--output', type=str,
-                       help='Save analysis results to JSON file')
-    
-    args = parser.parse_args()
-    
-    # Set default dates
-    if args.end_date is None:
-        args.end_date = datetime.now().strftime('%Y-%m-%d')
-    if args.start_date is None:
-        args.start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+    # Hardcoded values
+    geojson_path = "test_field.geojson"
+    start_date = "2018-08-01"
+    end_date = "2020-08-01"
+    output_file = None  # Can be set to save results
     
     print("🛰️  Google Earth Engine Dry Run Analysis")
     print("=" * 50)
-    print(f"Date range: {args.start_date} to {args.end_date}")
+    print(f"Date range: {start_date} to {end_date}")
+    print(f"Field: {geojson_path}")
     
     try:
         # Initialize analyzer
         analyzer = GEEDryRunAnalyzer()
         
         # Analyze geometry
-        geometry_info = analyzer.analyze_geometry(args.geojson)
+        geometry_info = analyzer.analyze_geometry(geojson_path)
         
         # Analyze each satellite dataset
         s2_info = analyzer.analyze_sentinel2_availability(
-            geometry_info['geometry'], args.start_date, args.end_date
+            geometry_info['geometry'], start_date, end_date
         )
         
         s1_info = analyzer.analyze_sentinel1_availability(
-            geometry_info['geometry'], args.start_date, args.end_date
+            geometry_info['geometry'], start_date, end_date
         )
         
         l8_info = analyzer.analyze_landsat8_availability(
-            geometry_info['geometry'], args.start_date, args.end_date
+            geometry_info['geometry'], start_date, end_date
         )
         
         # Estimate download size
@@ -750,7 +737,7 @@ def main():
         # Generate summary
         summary = analyzer.generate_download_summary(
             geometry_info, s2_info, s1_info, l8_info, size_estimates,
-            args.start_date, args.end_date, agricultural_suitability
+            start_date, end_date, agricultural_suitability
         )
         
         # Print final recommendations
@@ -759,13 +746,13 @@ def main():
             print(f"   {rec}")
         
         # Save results if requested
-        if args.output:
-            with open(args.output, 'w') as f:
+        if output_file:
+            with open(output_file, 'w') as f:
                 json.dump(summary, f, indent=2, default=str)
-            print(f"\n💾 Analysis results saved to: {args.output}")
+            print(f"\n💾 Analysis results saved to: {output_file}")
         
         print(f"\n✅ Dry run analysis complete!")
-        print(f"   Run with --output analysis.json to save detailed results")
+        print(f"   Set output_file variable to save detailed results")
         
     except Exception as e:
         print(f"\n❌ Error during analysis: {e}")
