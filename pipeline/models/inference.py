@@ -64,15 +64,15 @@ class ModelInference:
             # Extract model configuration
             if 'model_config' in checkpoint:
                 config = checkpoint['model_config']
-                self.input_channels = config.get('input_channels', 13)  # S1 + S2 default
+                self.input_channels = config.get('input_channels', 21)  # S1 + S2 + L8 default
                 self.num_classes = config.get('num_classes', 20)  # PASTIS default
             elif 'config' in checkpoint:
                 config = checkpoint['config']
                 self.input_channels = config.get('input_channels', 13)
                 self.num_classes = config.get('num_classes', 20)
             else:
-                # Default configuration for agricultural analysis
-                self.input_channels = 13  # S2 (10) + S1 (2) + derived (1)
+                # Default configuration for agricultural analysis (SICKLE-compatible)
+                self.input_channels = 21  # S2 (12) + S1 (2) + L8 (8) = 22, or subset based on model
                 self.num_classes = 20     # Crop classes
             
             # Initialize model architecture
