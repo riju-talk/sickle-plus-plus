@@ -55,6 +55,7 @@ class GEEDataDownloader:
             self.output_dir,
             os.path.join(self.output_dir, 'sentinel1'),
             os.path.join(self.output_dir, 'sentinel2'),
+            os.path.join(self.output_dir, 'landsat8'),
             os.path.join(self.output_dir, 'metadata'),
             os.path.join(self.output_dir, 'geometry')
         ]
@@ -98,7 +99,7 @@ class GEEDataDownloader:
         }
     
     def download_satellite_data(self, geometry: ee.Geometry, start_date: str, end_date: str) -> dict:
-        """Download Sentinel-1 and Sentinel-2 data for the given geometry and date range."""
+        """Download Sentinel-1, Sentinel-2, and Landsat-8 data for the given geometry and date range."""
         print(f"\n🛰️ Downloading satellite data...")
         download_results = {}
         
@@ -172,6 +173,40 @@ class GEEDataDownloader:
             print(f"      ❌ Sentinel-1 download failed: {e}")
             download_results['sentinel1'] = {'error': str(e)}
         
+        # Download Landsat-8 data
+        try:
+            print("   🌍 Downloading Landsat-8...")
+            l8_collection = (ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
+                           .filterBounds(geometry)
+                           .filterDate(start_date, end_date)
+                           .filter(ee.Filter.lt("CLOUD_COVER", 20))
+                           .select(['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7', 'ST_B10']))
+            
+            l8_composite = l8_collection.median()
+            
+            # Download task
+            l8_task = ee.batch.Export.image.toDrive(
+                image=l8_composite,
+                description=f'landsat8_composite_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
+                folder='sickle_downloads',
+                region=geometry,
+                scale=30,
+                maxPixels=1e9
+            )
+            l8_task.start()
+            
+            download_results['landsat8'] = {
+                'task_id': l8_task.id,
+                'status': 'started',
+                'bands': ['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7', 'ST_B10'],
+                'scale': 30
+            }
+            print(f"      ✅ Landsat-8 task started: {l8_task.id}")
+            
+        except Exception as e:
+            print(f"      ❌ Landsat-8 download failed: {e}")
+            download_results['landsat8'] = {'error': str(e)}
+        
         return download_results
     
     def save_metadata(self, geometry_info: dict, download_info: dict, start_date: str, end_date: str):
@@ -188,6 +223,7 @@ class GEEDataDownloader:
                 'root': self.output_dir,
                 'sentinel1': os.path.join(self.output_dir, 'sentinel1'),
                 'sentinel2': os.path.join(self.output_dir, 'sentinel2'),
+                'landsat8': os.path.join(self.output_dir, 'landsat8'),
                 'metadata': os.path.join(self.output_dir, 'metadata'),
                 'geometry': os.path.join(self.output_dir, 'geometry')
             }
@@ -237,6 +273,7 @@ class GEEDataDownloader:
             print(f"   🗂️ Organization:")
             print(f"      ├── sentinel1/     (SAR data)")
             print(f"      ├── sentinel2/     (Multispectral data)")
+            print(f"      ├── landsat8/      (Optical + Thermal data)")
             print(f"      ├── metadata/      (Download info)")
             print(f"      └── geometry/      (Field boundaries)")
             print(f"\n⏳ Google Earth Engine tasks are processing...")

@@ -1,146 +1,127 @@
-# Google Earth Engine Dry Run Script
+# SICKLE++ Data Download Script
 
-A standalone script to analyze satellite data availability from Google Earth Engine without downloading any actual data.
+This script downloads satellite data from Google Earth Engine for agricultural field analysis.
 
 ## Features
 
-- 📍 **Geometry Analysis**: Validates GeoJSON files and computes area/bounds
-- 🛰️ **Multi-Sensor Coverage**: Checks Sentinel-2, Sentinel-1, and Landsat 8 availability  
-- 📊 **Band Information**: Lists all available bands with descriptions
-- 💾 **Size Estimation**: Estimates download size for planning
-- 🎯 **Smart Recommendations**: Suggests optimal parameters
-- 💾 **JSON Export**: Saves detailed analysis results
+- ✅ **Downloads Sentinel-1, Sentinel-2, and Landsat-8 data** for agricultural analysis
+- 📁 **Creates organized directory structure** for downloaded files
+- 🗺️ **Validates field geometry** and area suitability  
+- 💾 **Saves metadata** about downloads and processing
+- 🌾 **Optimized for crop monitoring** with SICKLE-compatible bands
 
-## Quick Start
+## Usage
 
-1. **Authenticate with Earth Engine**:
+### Basic Download
+
+```bash
+python gee_download.py test_field.geojson
+```
+
+### Advanced Options
+
+```bash
+python gee_download.py test_field.geojson --output-dir ./my_downloads --start-date 2018-08-01 --end-date 2020-08-01
+```
+
+### Arguments
+
+- `geojson_file`: Path to GeoJSON file containing field geometry (required)
+- `--output-dir`: Output directory for downloaded data (default: `downloads`)
+- `--start-date`: Start date in YYYY-MM-DD format (default: `2018-08-01`)
+- `--end-date`: End date in YYYY-MM-DD format (default: `2020-08-01`)
+
+## Directory Structure
+
+The script creates an organized directory structure:
+
+```
+downloads/
+├── sentinel1/          # SAR data files (VV, VH polarizations)
+├── sentinel2/          # Multispectral data (12 bands: B1-B12)
+├── landsat8/           # Optical + Thermal data (8 bands: B1-B7, B10)
+├── metadata/           # Download metadata and configuration
+│   └── download_metadata.json
+└── geometry/           # Copy of field geometry file
+    └── test_field.geojson
+```
+
+## Prerequisites
+
+1. **Google Earth Engine Authentication**:
    ```bash
    earthengine authenticate
    ```
 
-2. **Run dry run analysis**:
-   ```bash
-   python gee_dry_run.py test_field.geojson
-   ```
+2. **Required Python packages** (see project requirements):
+   - `earthengine-api`
+   - `geojson`
+   - `numpy`
 
-3. **Specify custom date range**:
-   ```bash
-   python gee_dry_run.py test_field.geojson --start-date 2024-01-01 --end-date 2024-12-31
-   ```
+## Satellite Data
 
-4. **Save results to file**:
-   ```bash
-   python gee_dry_run.py test_field.geojson --output analysis_results.json
-   ```
-
-## What It Analyzes
-
-### Sentinel-2 (Optical)
-- 🔬 **13 spectral bands** from coastal to SWIR
-- ☁️ **Cloud coverage analysis** (shows total vs. cloud-free images)
-- 📏 **10m spatial resolution**
+### Sentinel-2 (Multispectral)
+- **Bands**: B1, B2, B3, B4, B5, B6, B7, B8, B8A, B9, B11, B12
+- **Resolution**: 10m
+- **Cloud filtering**: <20% cloud coverage
+- **Agricultural focus**: Vegetation indices, chlorophyll, moisture
 
 ### Sentinel-1 (SAR)
-- 📡 **VV/VH polarizations** for crop monitoring
-- 🛰️ **Ascending/descending orbits** for complete coverage
-- 📏 **10m spatial resolution**
+- **Bands**: VV, VH polarizations
+- **Resolution**: 10m  
+- **Mode**: Interferometric Wide (IW)
+- **Agricultural focus**: Crop structure, biomass, phenology
 
-### Landsat 8 (Optical)
-- 🌈 **11 spectral bands** including thermal
-- ☁️ **Cloud coverage filtering**
-- 📏 **30m spatial resolution**
+### Landsat-8 (Optical + Thermal)
+- **Bands**: SR_B1, SR_B2, SR_B3, SR_B4, SR_B5, SR_B6, SR_B7, ST_B10
+- **Resolution**: 30m (optical), 100m (thermal)
+- **Cloud filtering**: <20% cloud coverage
+- **Agricultural focus**: Vegetation health, thermal stress, crop type classification
+- **Thermal band**: Surface temperature (ST_B10) for crop stress analysis
 
-## Example Output
+## Output Files
 
-```
-🛰️  Google Earth Engine Dry Run Analysis
-==================================================
-Date range: 2024-01-01 to 2024-12-31
+Files are exported to Google Drive in the `sickle_downloads` folder. Download them manually and place in the appropriate directories:
 
-📍 Analyzing geometry: test_field.geojson
-   Area: 121.00 km²
-   Bounding box: (-93.5, 41.5, -93.4, 41.6)
-   Centroid: [-93.45, 41.55]
-   Size valid: ✅
+1. **Sentinel-2 files** → `sentinel2/` directory
+2. **Sentinel-1 files** → `sentinel1/` directory
+3. **Landsat-8 files** → `landsat8/` directory
 
-🛰️  Analyzing Sentinel-2 data...
-   Total images available: 47
-   Images with <20% clouds: 31
-   Available bands: 13
-   📊 Sentinel-2 Bands:
-      ✅ B2: Blue (490nm)
-      ✅ B3: Green (560nm)
-      ✅ B4: Red (665nm)
-      ✅ B8: NIR (842nm)
-      ...
+## Example Field File
 
-📡 Analyzing Sentinel-1 SAR data...
-   Total SAR images: 73
-   Ascending orbit: 37
-   Descending orbit: 36
-   Available bands: 3
-   📊 Sentinel-1 Bands:
-      ✅ VV: Vertical transmit, vertical receive
-      ✅ VH: Vertical transmit, horizontal receive
-      ✅ angle: Incidence angle
+The included `test_field.geojson` shows the expected format:
 
-🌍 Analyzing Landsat 8 data...
-   Total images available: 23
-   Images with <20% clouds: 18
-   Available bands: 18
-   📊 Landsat 8 Bands:
-      ✅ SR_B2: Blue (482nm)
-      ✅ SR_B3: Green (562nm)
-      ✅ SR_B4: Red (655nm)
-      ...
-
-💾 Estimating download size...
-   SENTINEL2:
-      Images: 31
-      Size per image: 15.7 MB
-      Total size: 487.2 MB
-   SENTINEL1:
-      Images: 73
-      Size per image: 9.7 MB  
-      Total size: 708.1 MB
-   LANDSAT8:
-      Images: 18
-      Size per image: 21.8 MB
-      Total size: 392.4 MB
-   📊 TOTAL ESTIMATED SIZE: 1587.7 MB (1.59 GB)
-
-🎯 Recommendations:
-   ✅ Good data availability
-   💾 Moderate download size - should be manageable
+```json
+{
+  "type": "FeatureCollection",
+  "features": [{
+    "type": "Feature",
+    "properties": {
+      "name": "Test Agricultural Field",
+      "crop_type": "corn",
+      "location": "Iowa, USA"
+    },
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [-93.5, 41.5], [-93.4, 41.5], 
+        [-93.4, 41.6], [-93.5, 41.6], 
+        [-93.5, 41.5]
+      ]]
+    }
+  }]
+}
 ```
 
-## Command Line Options
+## Integration with Inference Pipeline
 
-```bash
-python gee_dry_run.py <geojson_file> [options]
+After downloading data, use the inference pipeline:
 
-Arguments:
-  geojson_file          Path to GeoJSON file with area of interest
+```python
+from pipeline.orchestrator.inference_pipeline import InferencePipeline
 
-Options:
-  --start-date YYYY-MM-DD  Start date (default: 30 days ago)
-  --end-date YYYY-MM-DD    End date (default: today)
-  --output FILE            Save detailed analysis to JSON file
-  -h, --help               Show help message
+# Initialize pipeline with downloaded data
+pipeline = InferencePipeline(model_path="path/to/model.pth")
+results = pipeline.run_inference_from_downloaded_data("./downloads")
 ```
 
-## Use Cases
-
-- 📊 **Data availability assessment** before starting analysis projects
-- 💰 **Cost estimation** for commercial Earth Engine usage 
-- 📅 **Optimal date range selection** for crop monitoring
-- 🗺️ **Multi-sensor data planning** for research projects
-- ⚡ **Quick feasibility checks** for new study areas
-
-## Notes
-
-- Requires authenticated Google Earth Engine account
-- Analysis is free (no data download charges)
-- Size estimates are approximate - actual sizes may vary
-- Cloud filtering uses 20% threshold by default
-- Works with any valid GeoJSON geometry
