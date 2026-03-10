@@ -1,0 +1,133 @@
+Variable,Description,Type,Unit
+Merged_ID,Obeservation identification,Text,NA
+Region,"Region of largest rice plot ('AP' refers to Andhra Pradesh, 'Bihar' referes to Bihar and neighbouring districts of eastern Uttar Pradesh, 'Odisha' refers to Odisha, 'Nepal' refers to the Terai of Nepal, 'Punjab_Haryana' refers to Punjab & Haryana)",Text,NA
+Dataset,Survey in which observation was made,Text,NA
+LAT,Latitude of largest rice plot (truncated to two decimal points to faciliate anonymity),Numeric,Decimal degrees
+LONG,Longitude of largest rice plot (truncated to two decimal points to faciliate anonymity),Numeric,Decimal degrees
+SEASON,Season in which largest rice plot was grown (simplified to 'Rabi' and 'Kharif'. 'Aman season in Bangladesh was categorized as Kharif. Season was also assumed to be kharif in Bangladesh when nursery estabalishment day was between 60 and 270 days after 1 January),Text,NA
+CRLPARHA,Area of largest rice plot (i.e. of the largest rice field of a surveyed farmer),numeric,ha (assuming 1 hectare = 2.47105 acres)
+GEN,Gender of surveyed farmer,Text,NA
+EDU,"Education level of surveyed farmer ('1' refers to no formal schooling completed, '2' refers to primary education completed, '3' refers to matriculation completed, '4' refers to senior secondary completed, '5' refers to bachelors degree completed, '6' refers to masters degree completed, '7' refers to PhD completed)",Integer,Caterogical
+SOCCAT,"Social category of surveyed farmer (India-surveys only: 'SC' refers to Scheduled Castes, ST refers to 'Scheduled Tribes', 'OBC' refers to Other Backward Classes, 'General' refers to General Category)",Text,Caterogical
+CRARHA,Total cultivated area of surveyed farmer during surveyed season (ha),Numeric,ha (assuming 1 hectare = 2.47105 acres)
+HHMEM,Number of houehold members of surveyed farmer,Integer,Persons
+SPRODMR,Share of total crop production sold to market,Numeric,%
+HIFAG,Share of household income from agriculture,Numeric,%
+INFRCR,Share of total agriculture income derived from selected crop,Numeric,%
+DISMR,Distance to market for largest rice plot,Numeric,km
+SOPER,"Farmer perceived soil quality of largest rice plot (1 - Low, 2 - Medium, 3 - High)",Integer,Caterogical
+SOILTEX,"Farmer perceived soil texture of largest rice plot (1 - Light, 2 - Medium, 3 - Heavy)",Integer,Caterogical
+DCLASS,"Farmer perceived drainage class of largest rice plot (1 - very lowland, 2 - lowland, 3 - mediumland, 4 - upland)",Integer,Caterogical
+PCRR,What percentage of residue was retained from previous crop in largest rice plot,Numeric,%
+PCRRB,Were previous crop residue burtn in largest rice plot (yes/no),Text,NA
+SDATE,Date of establishing rice nursery or direct seeding rice for largest rice plot,Text,dd/mm/yyyy
+SDATE_rel,Relative date of establishing rice nursery for largest rice plot (relative to median SDATE of surveyed region),Text,days
+TDATE,Date of transplanting or direct seeding of rice in largest rice plot,Text,dd/mm/yyyy
+TDATE_rel,Relative date of transplanting or direct seeding of rice in largest rice plot (relative to median TDATE of surveyed region),Numeric,days
+HDATE,Date of harvest of largest rice plot,Text,dd/mm/yyyy
+VARTYPE,"Type of rice variety in largest plot (basmati, local, improved, hybrid)",Text,Categorical
+EST_line,Rice planted in rows ('Line') or randomly ('Random') in lagest rice plot,Text,Cateogrical
+EST_binary,"Rice planted by direct seeding ('Direct_seed'), or by transplanting ('Transplanted') in largest rice plot",Text,Categorical
+SRATEHA,Rate of rice seed used in largest rice plot,Numeric,kg/ha
+IRRIAVA,Availability of irrigation in largest rice plot (yes/no),Text,NA
+IRRINU,Number of irrigations during cropping season for largest rice plot,Numeric,Number of irrigation events
+WSEV,"Farmer perceived weed severity during cropping season for largest rice plot (0 - none, 1 - low, 2 - medium, 3 - high)",Integer,Categorical
+INSEV,"Farmer perceived insect pest severity during cropping season for largest rice plot (0 - none, 1 - low, 2 - medium, 3 - high)",Integer,Categorical
+DISEV,"Farmer perceived crop disease severity during cropping season for largest rice plot (0 - none, 1 - low, 2 - medium, 3 - high)",Integer,Categorical
+DRSEV,"Farmer perceived drought stress severity during cropping season for largest rice plot (0 - none, 1 - low, 2 - medium, 3 - high)",Integer,Categorical
+FLSEV,"Farmer perceived flood stress severity during cropping season for largest rice plot (0 - none, 1 - low, 2 - medium, 3 - high)",Integer,Categorical
+LOD,Percentage of crop that lodged in the largest rice plot,Numeric,%
+TOTSSP,Total single super phosphate applied in largest plot,Numeric,kg
+TOTTSP,Total triple super phosphate applied in largest plot,Numeric,kg
+TOTMOP,Total muriate of potash applied in largest plot,Numeric,kg
+TOTGYP,Total gypsum applied in largest plot,Numeric,kg
+TOTBOR,Total boron applied in largest plot,Numeric,kg
+TOTZNSO4,Total zinc sulphate applied in largest plot,Numeric,kg
+Organic_fert_kg_plot,"Organic applied per ha of largest plot (includes farm yard manure, compost and/or organic fertilizer from market)",Numeric,kg
+N_in_NPK,Nitrogen in NPK compound fertilizer (calculacted from farmer-reported fertiliser),Numeric,Proportion
+N_in_NPKS,Nitrogen in NPKS compound fertilizer (calculacted from farmer-reported fertiliser),Numeric,Proportion
+N_in_BOFERT,Nitrogen in 'BOFERT' (calculacted from farmer-reported fertiliser),Numeric,Proportion
+N_in_FTDOFERT,Nitrogen in 'FTDFERT' (calculacted from farmer-reported fertiliser),,Proportion
+N_in_STDOFERT,Nitrogen in 'STDFERT' (calculacted from farmer-reported fertiliser),,Proportion
+N_in_TTDOFERT,Nitrogen in TTDOFERT (calculacted from farmer-reported fertiliser),,Proportion
+BUREA,Total urea applied at planting in largest rice plot,Numeric,kg
+FTDUREA,Total urea applied at first urea topdressing of largest rice plot,Numeric,kg
+FTDUREADY,Days after 'TDATE' (transplanting date) for first urea topdressing of largest rice plot,Numeric,days
+STDUREA,Total urea applied at second urea topdressing of largest rice plot,Numeric,kg
+STDUREADY,Days after 'TDATE' (transplanting date) for second urea topdressing of largest rice plot,Numeric,days
+TTDUREA,Total urea applied at third urea topdressing of largest rice plot,Numeric,kg
+TTDUREADY,Days after 'TDATE' (transplanting date) for third urea topdressing of largest rice plot,Numeric,days
+BDAP,Total Di-Ammonium Phosphate applied at planting in largest rice plot,Numeric,kg
+FTDDAP,Total Di-Ammonium Phosphate applied at first Di-Ammonium Phosphate topdressing of largest rice plot,Numeric,kg
+FTDDAPDY,Days after 'TDATE' (transplanting date) for first Di-Ammonium Phosphate topdressing of largest rice plot,Numeric,days
+STDDAP,Total Di-Ammonium Phosphate applied at second Di-Ammonium Phosphate topdressing of largest rice plot,Numeric,kg
+STDDAPDY,Days after 'TDATE' (transplanting date) for second Di-Ammonium Phosphate topdressing of largest rice plot,Numeric,days
+TTDDAP,Total Di-Ammonium Phosphate applied at third Di-Ammonium Phosphate topdressing of largest rice plot,Numeric,kg
+TTDDAPDY,Days after 'TDATE' (transplanting date) for third Di-Ammonium Phosphate topdressing of largest rice plot,Numeric,days
+BNPK,Total NPK compound feritliser applied at planting in largest rice plot,Numeric,kg
+FTDNPK,Total NPK compound feritliser applied at first NPK compound feritliser topdressing of largest rice plot,Numeric,kg
+FTDNPKDY,Days after 'TDATE' (transplanting date) for first NPK compound feritliser topdressing of largest rice plot,Numeric,days
+STDNPK,Total NPK compound feritliser applied at second NPK compound feritliser topdressing of largest rice plot,Numeric,kg
+STDNPKDY,Days after 'TDATE' (transplanting date) for second NPK compound feritliser topdressing of largest rice plot,Numeric,days
+TTDNPK,Total NPK compound feritliser applied at third NPK compound feritliser topdressing of largest rice plot,Numeric,kg
+TTDNPKDY,Days after 'TDATE' (transplanting date) for third NPK compound feritliser topdressing of largest rice plot,Numeric,days
+BNPKS,Total NPKS compound feritliser applied at planting in largest rice plot,Numeric,kg
+FTDNPKS,Total NPKS compound feritliser applied at first NPKS compound feritliser topdressing of largest rice plot,Numeric,kg
+FTDNPKSDY,Days after 'TDATE' (transplanting date) for first NPKS compound feritliser topdressing of largest rice plot,Numeric,days
+STDNPKS,Total NPKS compound feritliser applied at second NPKS compound feritliser topdressing of largest rice plot,Numeric,kg
+STDNPKSDY,Days after 'TDATE' (transplanting date) for second NPKS compound feritliser topdressing of largest rice plot,Numeric,days
+TTDNPKS,Total NPKS compound feritliser applied at third NPKS compound feritliser topdressing of largest rice plot,Numeric,kg
+TTDNPKSDY,Days after 'TDATE' (transplanting date) for third NPKS compound feritliser topdressing of largest rice plot,Numeric,days
+BOFERTAT,Total other feritliser applied at planting in largest rice plot,Numeric,kg
+FTDOFERTAT,Total other feritliser applied at first other feritliser topdressing of largest rice plot,Numeric,kg
+FTDOFERTDY,Days after 'TDATE' (transplanting date) for first other feritliser topdressing of largest rice plot,Numeric,days
+STDOFERTAT,Total other feritliser applied at second other feritliser topdressing of largest rice plot,Numeric,kg
+STDOFERTDY,Days after 'TDATE' (transplanting date) for second other feritliser topdressing of largest rice plot,Numeric,days
+TTDOFERTAT,Total other feritliser applied at third other feritliser topdressing of largest rice plot,Numeric,kg
+TTDOFERTDY,Days after 'TDATE' (transplanting date) for third other feritliser topdressing of largest rice plot,Numeric,days
+FourthTDUREA,Total urea applied at fourth urea topdressing of largest rice plot,Numeric,kg
+FourthTDUREADY,Days after 'TDATE' (transplanting date) for fourth urea topdressing of largest rice plot,Numeric,days
+yield_kg_ha,Rice yield of largest rice plot,Numeric,kg/ha
+FGPRICE_quintal,Farm gate price for rice (assumes 1 Nepal Rupee = 0.62 INR and 1 Bangladesh Taka = 0.82 INR),Numeric,INR / qunital of rice
+Urea_price,Price paid by farmers for urea (assumes 1 Nepal Rupee = 0.62 INR and 1 Bangladesh Taka = 0.82 INR),Numeric,INR / kg of urea
+SoilGrids_bdod,"Bulk density of fine earth fraction of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,kg dm-3
+SoilGrids_cfvo,"Vol. fraction of coarse fragments (>2 mm) of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,%
+SoilGrids_clay,"Clay (< 0.002 mm) in fine earth of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,%
+SoilGrids_nitrogen,"Total nitrogen (N) of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,g/kg
+SoilGrids_ocd,"Organic carbon density of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,kg / cubic metre
+SoilGrids_phh2o,"pH (H2O) of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,NA
+SoilGrids_sand,"Sand (> 0.05 mm) in fine earth of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,%
+SoilGrids_silt,"Silt (0.002-0.05 mm) in fine earth of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,%
+SoilGrids_soc,"Soil organic carbon in fine earth of toipsoil (0-5cm) in largest rice plot, according to SoilGrids (Poggio et al., 2021)",Numeric,g/kg
+year,Year of 'TDATE' for surveyed rice crop,Integer,NA
+total_precip,"Total precipitation during year of surveyed rice crop, according to CHRIPS (Funk et al., 2015)",Numeric,mm
+num_dry_days,"Total days without rainfall during year of surveyed rice crop, according to CHRIPS (Funk et al., 2015)",Numeric,days
+num_wet_days,"Total days with rainfall during year of surveyed rice crop, according to CHRIPS (Funk et al., 2015)",Numeric,days
+avg_dspell_length,"Average length of dry spells (defined as five or more days without rainfall) during year of surveyed rice crop, according to CHRIPS (Funk et al., 2015)",Numeric,days
+avg_wspell_length,"Average length of wet spells (defined as five or more days with rainfall) during year of surveyed rice crop, according to CHRIPS (Funk et al., 2015)",Numeric,days
+monsoon_onset,Date of monsoon onset,Numeric,days after 1 Jan
+monsoon_retreat,Date of monsoon retreat,Numeric,days after 1 Jan
+Nursery_duration,Days between 'SDATE' and 'TDATE',Numeric,days
+Crop_duration,Days between 'SDATE' and 'HDATE',Numeric,days
+Field_duration,Days between 'TDATE' and 'HDATE',Numeric,days
+TDATE_yday,TDATE' in terms of days after 1 Jan,Numeric,days after 1 Jan
+Transplanting_year,Year of 'TDATE' for surveyed rice crop,Integer,NA
+Harvest_year,Year of 'HDATE' for surveyed rice crop,Integer,NA
+monsoon_length,Days between 'monsoon_onset' and 'monsoon_retreat',Numeric,days
+P2O5_ha,"Application rate of mineral phosphorus fertiliser in largest rice plot (calculated from farmer-reported application of 'SSP', 'TSP', 'NPK', 'NPKS', 'DAP')",Numeric,P2O5 kg/ha
+K2O_ha,"Application rate of mineral potassium in largest rice plot (calculated from farmer-reported application of 'MOP', 'NPK', 'NPKS')",Numeric,K2O kg/ha
+GYP_ha,Application rate of gypsum in largest rice plot (calculated from farmer-reported application of 'GYP'),Numeric,CaSO4 kg/ha
+BOR_ha,Application rate of boron in largest rice plot (calculated from farmer-reported application of 'BOR'),Numeric,B kg/ha
+Zn_ha,Application rate of Zinc in largest rice plot (calculated from farmer-reported application of 'ZNSO4'),Numeric,Zn kg/ha
+Organic_ha,Application rate of organic feritliser in largest rice plot (calculated from farmer-reported application of 'Organic_fert_kg_plot'),Numeric,kg/ha
+UREA_N,Application of nitrogen from urea in largest rice plot (calculated from 'UREA' variables),Numeric,N kg
+DAP_N,Application of nitrogen from di-ammonium phosphate in largest rice plot (calculated from 'DAP' variables),Numeric,N kg
+NPK_N,Application of nitrogen from NPK compound fertiliser in largest rice plot (calculated from NPK variables),Numeric,N kg
+NPKS_N,Application of nitrogen from NPKS compound fertiliser in largest rice plot (calculated from NPKS variables),Numeric,N kg
+OFERT_N,Application of nitrogen from 'other fertiliser' in largest rice plot (calculated from 'OFERT' variables),Numeric,N kg
+Total_N,"Application of nitrogen from mineral fertilisers in largest rice plot (calculated from 'UREA', 'DAP', 'NPK', 'NPKS', 'OFERT' variables)",Numeric,N kg
+N_kg_ha,Application rate of nitrogen in largest plot (calculated from 'Total_N' and 'CRLPARHA'),Numeric,N kg/ha
+PFPn,Partial factor productivity of nitrogen fertilizer ('yield_kg_ha' divided by 'N_kg_ha'),Numeric,rice kg / N kg
+Nperc_pre_7_DAT,Percentage of 'Total_N' applied before 7 days after transplanting (calculated from 'DY' and 'AT' variables),Numeric,%
+MaxUnsplit_Nperc_within_1_days,Largest percentage of 'Total_N' applied within 1 day (calculated from 'DY' and 'AT' variables),Numeric,%
+Nperc_7to30_DAT,Percentage of 'Total_N' applied within 7-30 days after transplanting (calculated from 'DY' and 'AT' variables),Numeric,%

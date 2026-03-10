@@ -7,16 +7,46 @@ import json
 from pathlib import Path
 import sys
 
-# Add models directory to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..', 'models'))
+# Add models directory to path (repo-root/models)
+models_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', 'models'))
+if models_dir not in sys.path:
+    sys.path.insert(0, models_dir)
+
+# Try to import common model classes; be flexible about exported names
+UNet3D = None
+UNet3DMultitask = None
+UTAE = None
+PaSTiSUNet3D = None
 
 try:
-    from unet3d import UNet3D
-    from unet3d_multitask import UNet3D as UNet3DMultitask
-    from utae import UTAE
-    from pastis_unet3d import PaSTiSUNet3D
-except ImportError as e:
-    print(f"Warning: Could not import all models: {e}")
+    import unet3d as _unet3d_mod
+    UNet3D = getattr(_unet3d_mod, 'UNet3D', None)
+except Exception:
+    UNet3D = None
+
+try:
+    import unet3d_multitask as _unet3d_mt_mod
+    # module may export UNet3D or a specific class name
+    UNet3DMultitask = getattr(_unet3d_mt_mod, 'UNet3D', None) or getattr(_unet3d_mt_mod, 'UNet3DMultitask', None)
+except Exception:
+    UNet3DMultitask = None
+
+try:
+    import utae as _utae_mod
+    UTAE = getattr(_utae_mod, 'UTAE', None)
+except Exception:
+    UTAE = None
+
+try:
+    import pastis_unet3d as _pastis_mod
+    # Pastis implementation may use UNet3D as the exported class
+    PaSTiSUNet3D = getattr(_pastis_mod, 'PaSTiSUNet3D', None) or getattr(_pastis_mod, 'UNet3D', None)
+except Exception:
+    PaSTiSUNet3D = None
+
+missing = [n for n, v in [('UNet3D', UNet3D), ('UNet3DMultitask', UNet3DMultitask), ('UTAE', UTAE), ('PaSTiSUNet3D', PaSTiSUNet3D)] if v is None]
+if missing:
+    print(f"Warning: Could not import model classes: {missing}")
 
 
 class ModelInference:
@@ -42,7 +72,7 @@ class ModelInference:
         else:
             self.device = torch.device(device)
         
-        print(f"🔧 Using device: {self.device}")
+        print(f"Using device: {self.device}")
         
         self.model = None
         self.model_type = model_type
@@ -55,7 +85,7 @@ class ModelInference:
     
     def load_model(self, model_path: str):
         """Load trained model from file."""
-        print(f"🔄 Loading model: {model_path}")
+        print(f"Loading model: {model_path}")
         
         try:
             # Load checkpoint
@@ -89,53 +119,58 @@ class ModelInference:
             self.model.to(self.device)
             self.model.eval()
             
-            print(f"✅ Model loaded successfully: {self.model_type}")
+            print(f"Model loaded successfully: {self.model_type}")
             print(f"   Input channels: {self.input_channels}")
             print(f"   Output classes: {self.num_classes}")
             
         except Exception as e:
-            print(f"❌ Error loading model: {e}")
+            print(f"Error loading model: {e}")
             raise
     
     def _create_model_architecture(self):
         """Create model architecture based on model type."""
         try:
+            # Use defaults when no checkpoint was loaded
+            in_chan = int(self.input_channels) if self.input_channels else 21
+            n_classes = int(self.num_classes) if self.num_classes else 20
             if self.model_type == 'utae':
                 model = UTAE(
-                    input_dim=self.input_channels,
+                    input_dim=in_chan,
                     encoder_widths=[64, 64, 64, 128],
                     decoder_widths=[32, 32, 64, 128],
-                    out_conv=[32, self.num_classes],
+                    out_conv=[32, n_classes],
                     n_head=16,
                     d_model=256
                 )
             elif self.model_type == 'unet3d':
                 model = UNet3D(
-                    in_channel=self.input_channels,
-                    n_classes=self.num_classes,
+                    in_channel=in_chan,
+                    n_classes=n_classes,
                     timesteps=61,  # PASTIS default
                     dropout=0.2
                 )
             elif self.model_type == 'unet3d_multitask':
                 model = UNet3DMultitask(
-                    in_channel=self.input_channels,
-                    n_classes=self.num_classes,
+                    in_channel=in_chan,
+                    n_classes=n_classes,
                     timesteps=61,
                     dropout=0.2
                 )
             elif self.model_type == 'pastis':
-                model = PaSTiSUNet3D(
-                    input_dim=self.input_channels,
-                    num_classes=self.num_classes
-                )
+                # Pastis implementation in this repo may export UNet3D-style class
+                # Try common constructor signatures.
+                try:
+                    model = PaSTiSUNet3D(input_dim=in_chan, num_classes=n_classes)
+                except TypeError:
+                    model = PaSTiSUNet3D(in_channel=in_chan, n_classes=n_classes)
             else:
                 raise ValueError(f"Unknown model type: {self.model_type}")
             
             return model
         
         except NameError as e:
-            print(f"⚠️  Model class not available: {e}")
-            print("   Using basic CNN architecture instead")
+            print(f"Model class not available: {e}")
+            print("Using basic CNN architecture instead")
             return self._create_basic_model()
     
     def _create_basic_model(self):
@@ -178,7 +213,7 @@ class ModelInference:
         if self.model is None:
             raise ValueError("Model not loaded. Call load_model() first.")
         
-        print(f"🔮 Running inference...")
+        print(f"Running inference...")
         print(f"   Input shape: {data.shape}")
         
         # Prepare input tensor
@@ -232,7 +267,7 @@ class ModelInference:
         if return_probabilities:
             results['probabilities'] = probabilities
         
-        print(f"✅ Inference completed")
+        print(f"Inference completed")
         print(f"   Mean confidence: {mean_confidence:.3f}")
         if len(class_predictions.shape) > 0:
             print(f"   Unique classes predicted: {len(np.unique(class_predictions))}")
