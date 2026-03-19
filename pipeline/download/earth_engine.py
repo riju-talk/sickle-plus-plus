@@ -25,7 +25,7 @@ class EarthEngineDownloader:
                           geometry: ee.Geometry,
                           start_date: str,
                           end_date: str,
-                          cloud_threshold: float = 20.0,
+                          cloud_threshold: float = 80.0,
                           scale: int = 10,
                           sickle_compatible: bool = True) -> ee.Image:
         """
@@ -48,10 +48,10 @@ class EarthEngineDownloader:
                      .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", cloud_threshold)))
         
         if sickle_compatible:
-            # SICKLE dataset uses these 12 specific bands for agricultural analysis
-            bands = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B11', 'B12']
-            band_names = ['coastal', 'blue', 'green', 'red', 'rededge1', 'rededge2', 
-                         'rededge3', 'nir', 'nir_narrow', 'watervapor', 'swir1', 'swir2']
+            # SICKLE-style configuration: use consistent 10m/20m bands only
+            bands = ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11', 'B12']
+            band_names = ['blue', 'green', 'red', 'rededge1', 'rededge2', 
+                         'rededge3', 'nir', 'nir_narrow', 'swir1', 'swir2']
         else:
             # Standard bands: Blue, Green, Red, NIR, SWIR1, SWIR2  
             bands = ['B2', 'B3', 'B4', 'B8', 'B11', 'B12']
@@ -317,7 +317,6 @@ class EarthEngineDownloader:
                 region=geometry,
                 defaultValue=0,
                 properties=[],
-                maxPixels=max_pixels
             )
             
             # Convert to numpy array
